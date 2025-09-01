@@ -1,6 +1,6 @@
 import { CharacteristicValue, PlatformAccessory, Service } from 'homebridge';
 
-import { convert, hsv } from 'color-convert';
+import convert from 'color-convert';
 import { CyncDevice, CyncHome } from './api.js';
 import { CyncHub, CyncPacketSubtype, CyncPacketType } from './hub.js';
 import { CyncLightsPlatform } from './platform.js';
@@ -213,7 +213,7 @@ export class CyncLight {
     return hkColorTemp;
   }
 
-  hsv(): hsv {
+  hsv(): any {
     return convert.rgb.hsv(this.states.rgb[0], this.states.rgb[1], this.states.rgb[2]);
   }
 
