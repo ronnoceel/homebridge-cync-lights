@@ -213,7 +213,7 @@ export class CyncLight {
     return hkColorTemp;
   }
 
-  hsv(): Number[] {
+  hsv(): CharacteristicValue[] {
     return convert.rgb.hsv(this.states.rgb[0], this.states.rgb[1], this.states.rgb[2]);
   }
 
