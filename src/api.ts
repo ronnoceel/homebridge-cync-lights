@@ -55,7 +55,7 @@ export class CyncApi {
     private readonly platform: CyncLightsPlatform,
   ) {
     const identity = this.loadIdentity();
-    this.platform.log.info(`Identity: ${JSON.stringify(identity)}`);
+    this.platform.log.debug(`Identity: ${JSON.stringify(identity)}`);
     this.refreshToken = identity.refresh_token;
     this.userID = identity.user_id;
     this.authorize = identity.authorize;
@@ -63,9 +63,9 @@ export class CyncApi {
 
   loadIdentity() : CyncLoginResponse {
     const identityFile = path.join(this.platform.api.user.storagePath(), 'cync.json');
-    this.platform.log.info(`Identity file: ${identityFile}`);
+    this.platform.log.debug(`Identity file: ${identityFile}`);
     if (fs.existsSync(identityFile)) {
-      this.platform.log.info(`Returning contents of ${identityFile}`);
+      this.platform.log.debug(`Returning contents of ${identityFile}`);
       return JSON.parse(fs.readFileSync(identityFile, 'utf-8'));
     } else {
       // First time running this version, so move the config over
@@ -85,14 +85,14 @@ export class CyncApi {
       throw new Error('Please go to the plugin settings and log into Cync.');
     }
 
-    this.platform.log.info(`Checking access token expiration ${this.accessTokenExpiration}`);
+    this.platform.log.debug(`Checking access token expiration ${this.accessTokenExpiration}`);
 
     if (isNaN(this.accessTokenExpiration.valueOf()) || this.accessTokenExpiration.valueOf() < Date.now()) {
       // first, check the access_token
-      this.platform.log.info('Updating access token...');
+      this.platform.log.debug('Updating access token...');
 
       const payload = {refresh_token: this.refreshToken};
-      this.platform.log.info(`Payload: ${JSON.stringify(payload)}`);
+      this.platform.log.debug(`Payload: ${JSON.stringify(payload)}`);
       const token = await fetch('https://api.gelighting.com/v2/user/token/refresh', {
         method: 'post',
         body: JSON.stringify(payload),
@@ -100,7 +100,7 @@ export class CyncApi {
       });
 
       const data = await token.json() as CyncAuthResponse;
-      this.platform.log.info(`Response: ${JSON.stringify(data)}`);
+      this.platform.log.debug(`Response: ${JSON.stringify(data)}`);
       if (!data.access_token) {
         throw new Error('Unable to authenticate with Cync servers.  Please verify you have a valid refresh token.');
       }
@@ -109,17 +109,17 @@ export class CyncApi {
 
       // We will refresh it one day before it expires
       this.accessTokenExpiration = new Date(Date.now() + data.expire_in - 86400);
-      this.platform.log.info(`New access token expires in ${data.expire_in} seconds.`);
-      this.platform.log.info(`Expiration date set to ${this.accessTokenExpiration}.`);
+      this.platform.log.debug(`New access token expires in ${data.expire_in} seconds.`);
+      this.platform.log.debug(`Expiration date set to ${this.accessTokenExpiration}.`);
     } else {
-      this.platform.log.info(`Access token valid until ${this.accessTokenExpiration}`);
+      this.platform.log.debug(`Access token valid until ${this.accessTokenExpiration}`);
     }
 
     return this.accessToken;
   }
 
   async forEachDevice(handler: (cyncDevice: CyncDevice, cyncHome: CyncHome) => void) {
-    this.platform.log.info('Discovering homes...');
+    this.platform.log.debug('Discovering homes...');
 
     const accessToken = await this.getAccessToken();
     const options = {
@@ -129,15 +129,15 @@ export class CyncApi {
     const r = await fetch(`https://api.gelighting.com/v2/user/${this.userID}/subscribe/devices`, options);
     if (r.ok) {
       const data = await r.json() as CyncHome[];
-      this.platform.log.info(`Received home response: ${JSON.stringify(data)}`);
+      this.platform.log.debug(`Received home response: ${JSON.stringify(data)}`);
 
       for (const home of data) {
         const url = `https://api.gelighting.com/v2/product/${home.product_id}/device/${home.id}/property`;
-        this.platform.log.info(`Loading home information from ${url}.`);
+        this.platform.log.debug(`Loading home information from ${url}.`);
 
         const homeR = await fetch(url, options);
         const homeData = await homeR.json() as CyncHomeDevices;
-        this.platform.log.info(`Received device response: ${JSON.stringify(homeData)}`);
+        this.platform.log.debug(`Received device response: ${JSON.stringify(homeData)}`);
         if (homeData.bulbsArray) {
           for (const device of homeData.bulbsArray) {
             handler(device, home);
